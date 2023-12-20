@@ -26,8 +26,11 @@ pipeline {
         }
         stage('publish docker image') {
             steps {
-                sh "docker login -u <yaswanth59> -p <Yaswanth@123>"
+                withCredentials([string(credentialsId: 'JENKINS', variable: 'Docker')]) {
+
+                sh "docker login -u yaswanth59 -p ${Docker}"
                 sh "docker image push yaswanth59/dockerworkshop:$BUILD_ID"
+                }
             }
         }
         stage('Ensure kubernetes cluster is up') {
