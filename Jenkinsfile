@@ -70,7 +70,7 @@ pipeline {
             steps{
                 script{
                     dir('AWS-EKS-CLUSTER'){
-                        sh 'terraform plan terraform plan -var-file=values.tfvars'
+                        sh ' terraform plan -var-file=values.tfvars'
                     }
                     input(message: "are you sure to proceed?", ok: "proceed")
                 }

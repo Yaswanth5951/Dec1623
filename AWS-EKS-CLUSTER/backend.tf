@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "terraformfiles-volume"
+    bucket = "terraform-s3-bucket-qt"
     key    = "eks/terraform.tfstate"
-    region = "ap-northeast-3"
+    region = "us-west-2"
   }
 }
