@@ -80,7 +80,7 @@ pipeline {
             steps{
                 script{
                     dir('AWS-EKS-CLUSTER'){
-                        sh 'terraform $action -var-file --auto-approve'
+                        sh 'terraform $action -var-file=./values.tfvars --auto-approve'
                     }
                 }
             }
