@@ -3,6 +3,8 @@ pipeline {
     environment{
         AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_JENKINS_KEY')
+        AWS_DEFAULT_REGION = 'us-west-2'
+
     }
     stages {
         stage('clean workspace'){
@@ -37,28 +39,64 @@ pipeline {
                 }
             }
         }
-        stage('Ensure kubernetes cluster is up') {
-            steps {
-                sh "cd deployment/terraform && terraform init && terraform apply -auto-approve"
-            }
-        }
-        stage('deploy to k8s') {
-            steps {
-                sh "kubectl apply -f deployment/k8s/deployment.yaml"
-                sh """
-                kubectl patch deployment netflix-app -p '{"spec":{"template":{"spec":{"containers":[{"name":"netflix-app","image":"yaswanth59/dockerworkshop:$BUILD_ID"}]}}}}'
-                """
-            }
-        }
-
-        stage('kubescape Scan') {
-            steps {
-                script {
-                    sh "/home/ubuntu/.kubescape/bin/kubescape scan -t 40 deployment/k8s/deployment.yaml --format junit -o TEST-report.xml"
-                    junit "**/TEST-*.xml"
+        stage('intializing terraform'){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER'){
+                        sh 'terraform init'
+                    }
                 }
-                
+            }
+        }
+        stage("alignment the terraform code"){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER'){
+                        sh "terraform fmt"
+                    }
+                }
+            }
+        }
+        stage("validating terraform code"){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER'){
+                        sh "terraform validate"
+                    }
+                }
+            }
+        }
+        stage('previewing terraform infra'){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER'){
+                        sh 'terraform plan terraform plan -var-file=values.tfvars'
+                    }
+                    input(message: "are you sure to proceed?", ok: "proceed")
+                }
+            }
+        }
+        stage('creating/destroying EKS cluster'){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER'){
+                        sh 'terraform $action -var-file --auto-approve'
+                    }
+                }
+            }
+        }
+        stage('deploying application'){
+            steps{
+                script{
+                    dir('AWS-EKS-CLUSTER/manifestFiles'){
+                        sh 'aws eks update-kubeconfig --name my-eks-cluster'
+                        sh 'kubectl apply -f deployment.yaml'
+                        sh 'kubectl apply -f service.yaml'
+                    }
+                }
             }
         }
     }
 }
+
+
