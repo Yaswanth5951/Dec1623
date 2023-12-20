@@ -26,6 +26,7 @@ pipeline {
         }
         stage('publish docker image') {
             steps {
+                sh "docker login -u <yaswanth59> -p <Yaswanth@123> ",
                 sh "docker image push yaswanth59/dockerworkshop:$BUILD_ID"
             }
         }
